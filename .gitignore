@@ -7,4 +7,6 @@ data/raw_documents
 
 # Ignore environment files
 .env
-data/processed_documents/processed_data.json
+
+# ignore processed_dat.json
+processed_data.json
