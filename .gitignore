@@ -1,0 +1,10 @@
+
+# Ignore virtual environment
+chatbot-project/
+
+# Ignore Private documents
+data/raw_documents
+
+# Ignore environment files
+.env
+data/processed_documents/processed_data.json
