@@ -1,6 +1,6 @@
 
 # Ignore virtual environment
-chatbot-project/
+venv/
 
 # Ignore Private documents
 data/raw_documents
@@ -10,3 +10,8 @@ data/raw_documents
 
 # ignore processed_dat.json
 processed_data.json
+
+#ignore chromadb database
+data/vectorDB/chroma.sqlite3
+data/vectorDB/8b7b6530-01d0-4cf4-a87f-e144076bc1ad
+data/vectorDB/d1e6fc6f-93e0-4cfc-b278-3cf436437cea
