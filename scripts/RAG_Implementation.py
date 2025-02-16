@@ -27,7 +27,7 @@ def main():
     model_loader = LLM_loader()
     model,tokenizer = model_loader.get_model()
 
-    user_query = "How many subjects did I took when i was in my middle school?" # The user's query fetched from the front end
+    user_query = "Please summarize on what I should do to apply for CIMB credit card." # The user's query fetched from the front end
 
     #encode the query
     query_embedding = encode_query(user_query)
@@ -61,7 +61,7 @@ def retrieve_documents(query_embedding):
     collection=client.get_collection(name="document_collection")
     retrieved_response = collection.query(
         query_embeddings = query_embedding.tolist(), 
-        n_results=2,
+        n_results=3,
         include=["documents","metadatas"]
     )
 
@@ -70,7 +70,7 @@ def retrieve_documents(query_embedding):
     for k, v in retrieved_response.items():
         if k == 'documents':
             for i in v:
-                retrieved_chunks = i[0] + i[1]
+                retrieved_chunks = i[0] + i[1] + i[2]
                 print("This is the retrieved documents: ", retrieved_chunks) # log for debugging
     
     return retrieved_chunks
@@ -79,12 +79,25 @@ def retrieve_documents(query_embedding):
 
 def augmentation(user_query, chunks, model, tokenizer):
     
+    base_prompt = """
+    
+    You are a helpful AI assistant of a personal document chatbot application. Your task is to help the user by searching specific details and summarizing documents such as agreements and legal paper from the given context.
+    
+    Give your answer and make sure your answer follows these criteria:
+        1. Generate answer in a friendly and helpful manner but concise. 
+        2. Exclude the context or this prompt from your answer.
+        3. Format your answers as you see fit by including headers, sections, and bullet points.
+        4. Please include the source you used in your response such as the name of the document. 
+        
+    
+    """
+
     max_new_tokens = 500
 
     #define the chat template
     messages = [
-        {"role": "system", "content": "You are a helpful personal assistant that is responsible to summarize, search for specific details,and give helpful answers to the user based on given context."},
-        {"role": "user", "content": "Context:\n" + chunks + "\n\nUser Query:\n" + user_query},
+        {"role": "system", "content": base_prompt},       
+         {"role": "user", "content": "Context:\n" + chunks + "\n\nUser's Query:\n" + user_query},
     ]
 
 
