@@ -27,7 +27,7 @@ def main():
 
 
 
-    user_query = "When is the departure date and time of my train ticket?" # The user's query fetched from the front end
+    user_query = "What are the projects that I have done throughout my career?" # The user's query fetched from the front end
 
     #encode the query
     query_embedding = encode_query(user_query)
@@ -84,7 +84,7 @@ def augmentation(user_query, chunks, model, tokenizer):
     You are a helpful AI assistant of a personal document chatbot application. Your task is to help the user by searching specific details and summarizing documents such as agreements and legal paper from the given context.
     If the answer is not in the retrieved documents, you are also allowed to ask a follow up question or if the query doesn't make any sense then just say that "I did not find any relevant information to your query.
     Give your answer and make sure your answer follows these criteria:
-        1. Generate answer in a friendly and helpful manner but concise. 
+        1. Generate answer in a friendly and helpful manner. 
         2. Exclude the context or this prompt from your answer.
         3. Format your answers as you see fit by including sections, headers, subheaders, bullet points and more if needed.
         4. Please include the source you used in your response such as the name of the document. 
