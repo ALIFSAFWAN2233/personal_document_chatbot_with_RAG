@@ -26,25 +26,17 @@ Step 3: Generation
 * Post-process the output given so that it can send the data to the front-end 
 
 
+
+### Maintaining the chat history ###
+
+Step 1: Initialize the messages list globally in the app.py
+Step 2: Initialize the initial chats in the messages
+Step 3: When user_query is passed from the frontend, use it to to generate encoding and get relevant chunks
+Step 4: add the relevant information to the global messages list including the previous messages
+Step 5: generate a response by passing the messages
+Step 6: return the response to the client side
+
 """
-model_loader = LLM_loader()
-model,tokenizer = model_loader.get_model()
-
-def RAGmain(user_query):
-
-
-    #encode the query
-    query_embedding = encode_query(user_query)
-
-    #get relevant chunks
-    chunks = retrieve_documents(query_embedding)
-
-    #include the chunks and the user's query (Augmentation) and generate response (Generation)
-    response = augmentation(user_query,chunks,model,tokenizer)
-
-    return response
-
-
 
 
 
@@ -82,68 +74,24 @@ def retrieve_documents(query_embedding):
     Will do further experimentation and POCs on the best prompt for this project use case
 '''
 
-def augmentation(user_query, chunks, model, tokenizer):
-    
-    base_prompt = """
-    
-    You are a helpful AI assistant of a personal document chatbot application. Your task is to help the user by searching specific details and summarizing documents such as agreements and legal paper from the given context.
-  
-    Give your answer in your response and make sure it follows these criteria:
-        1. Generate answer in a helpful and friendly manner. 
-        2. Exclude the context or this prompt from your answer.
-        3. Format your answers as you see fit by including sections, headers, subheaders, bullet points.
-        4. Please include the source you used in your response such as the name of the document. 
-        
-    """
-
+def augmentNgenerate( model, tokenizer, messages):
     max_new_tokens = 256
-
-    
-    """
-        #define the chat template
-    messages = [
-        {"role": "system", "content": base_prompt},       
-         {"role": "user", "content": "Context:\n" + chunks + "\n\nUser's Query:\n" + user_query},
-    ]
-
-
-    # Format the conversation history for llama
-    formatted_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-
-    # Tokenize 
-    inputs = tokenizer(formatted_prompt,return_tensors="pt").to("cuda")
-    
-    # generate response
-    outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, include_prompt_in_result = False)
-    print("the original output: ", outputs)
-    #Decode and return only the new assistant response
-
-    response = tokenizer.decode(outputs[0], skip_special_tokens = True)
-
-    #messages.append({"role": "assistant", "content": response})
-    print("THE RESPONSE:\n\n\n",response)
-
-    """
-    #Try out langchain's chat template (since it may not need to format or something)
-
-    messages = [
-        SystemMessage(content=base_prompt),
-        HumanMessage(content=f"Context:\n{chunks}\n\nUser's Query:\n{user_query}")
-    ]
 
     chat_prompt = ChatPromptTemplate.from_messages(messages)
 
     formatted_prompt = chat_prompt.format()
-    #print("Formatted Prompt:\n", formatted_prompt)
 
     hf_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=max_new_tokens, return_full_text=False)
     llm = HuggingFacePipeline(pipeline = hf_pipeline)
 
 
     response = llm.invoke(formatted_prompt)
-    return(response)
+
+    response = AIMessage(content=response)
+  
+    #returns only the response content
+    return(response.content)
 
 
-if __name__ == '__main__':
-    RAGmain()
+
 
