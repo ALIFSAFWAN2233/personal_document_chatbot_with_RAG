@@ -1,21 +1,30 @@
 from fastapi import FastAPI
-from RAG_Implementation import encode_query, retrieve_documents, augmentation
+from RAG_Implementation import RAGmain
 from LLM_loader import LLM_loader
 
 #initialize the server
 app = FastAPI()
 
 # load the model on the server
-model_loader = LLM_loader()
-model,tokenizer = model_loader.get_model()
+#model_loader = LLM_loader()
+#model,tokenizer = model_loader.get_model()
+
+#get the user_query from the frontEnd
+
+#FastAPI uses type hints to define the parameters of an endpoint function
 
 
 """
     endpoint for receiving user's questions and returns answers
 """
 
-@app.post("/")
-async def root():
+@app.get("/query/")
+async def process_query(user_query: str): 
+
+    #run inference on the query
+    response = RAGmain(user_query)
+    #return the response to the client side
+
     return{"message": "Hello World"}
 
 

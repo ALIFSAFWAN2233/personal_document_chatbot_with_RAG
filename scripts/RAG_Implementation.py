@@ -1,8 +1,14 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
+
 from sentence_transformers import SentenceTransformer
 import chromadb
 from LLM_loader import LLM_loader
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain.prompts import ChatPromptTemplate
+from langchain.llms import HuggingFacePipeline
+from transformers import pipeline
+
+
+
 
 """
 This script is a pipeline for RAG implementation for this chatbot app
@@ -23,12 +29,9 @@ Step 3: Generation
 model_loader = LLM_loader()
 model,tokenizer = model_loader.get_model()
 
-def main():
+def RAGmain():
 
-
-
-    user_query = "What are the projects that I have done throughout my career?" # The user's query fetched from the front end
-
+    user_query = "What is the requirements to apply for CIMB Islamic Credit Card? "
     #encode the query
     query_embedding = encode_query(user_query)
 
@@ -38,8 +41,8 @@ def main():
     #include the chunks and the user's query (Augmentation) and generate response (Generation)
     response = augmentation(user_query,chunks,model,tokenizer)
 
-
-    print(response)
+    #print("RESPONSE RETURNED", response)
+    #return response
 
 
 
@@ -65,13 +68,13 @@ def retrieve_documents(query_embedding):
         include=["documents","metadatas"]
     )
 
-    print("This is the retrieved response from chromaDB: " , retrieved_response) # log for debugging
+    #print("This is the retrieved response from chromaDB: " , retrieved_response) # log for debugging
 
     for k, v in retrieved_response.items():
         if k == 'documents':
             for i in v:
                 retrieved_chunks = i[0] + i[1] + i[2]
-                print("This is the retrieved documents: ", retrieved_chunks) # log for debugging
+                #print("This is the retrieved documents: ", retrieved_chunks) # log for debugging
     
     return retrieved_chunks
 
@@ -94,7 +97,9 @@ def augmentation(user_query, chunks, model, tokenizer):
 
     max_new_tokens = 500
 
-    #define the chat template
+    """
+    
+        #define the chat template
     messages = [
         {"role": "system", "content": base_prompt},       
          {"role": "user", "content": "Context:\n" + chunks + "\n\nUser's Query:\n" + user_query},
@@ -109,13 +114,37 @@ def augmentation(user_query, chunks, model, tokenizer):
     
     # generate response
     outputs = model.generate(**inputs, max_new_tokens=max_new_tokens)
-
+    print("the original output: ", outputs)
     #Decode and return only the new assistant response
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+    response = tokenizer.decode(outputs[0], skip_special_tokens = True)
+
+    messages.append({"role": "assistant", "content": response})
+    """
+
+    #Try out langchain's chat template (since it may not need to format or something)
+
+    messages = [
+        SystemMessage(content=base_prompt),
+        HumanMessage(content=f"Context:\n{chunks}\n\nUser's Query:\n{user_query}")
+    ]
+
+    chat_prompt = ChatPromptTemplate.from_messages(messages)
+
+    formatted_prompt = chat_prompt.format()
+    #print("Formatted Prompt:\n", formatted_prompt)
+
+    hf_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=max_new_tokens)
+    llm = HuggingFacePipeline(pipeline = hf_pipeline)
+
+    response = llm(formatted_prompt)
+
+    print(response)
 
 
-    return response
+
+    #eturn response
 
 if __name__ == '__main__':
-    main()
+    RAGmain()
 
