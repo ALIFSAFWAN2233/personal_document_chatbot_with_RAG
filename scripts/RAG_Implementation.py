@@ -4,7 +4,8 @@ import chromadb
 from LLM_loader import LLM_loader
 from langchain.schema import AIMessage, HumanMessage, SystemMessage
 from langchain.prompts import ChatPromptTemplate
-from langchain.llms import HuggingFacePipeline
+#from langchain.llms import HuggingFacePipeline
+from langchain_huggingface import HuggingFacePipeline
 from transformers import pipeline
 
 
@@ -41,8 +42,8 @@ def RAGmain():
     #include the chunks and the user's query (Augmentation) and generate response (Generation)
     response = augmentation(user_query,chunks,model,tokenizer)
 
-    #print("RESPONSE RETURNED", response)
-    #return response
+
+    return response
 
 
 
@@ -85,11 +86,11 @@ def augmentation(user_query, chunks, model, tokenizer):
     base_prompt = """
     
     You are a helpful AI assistant of a personal document chatbot application. Your task is to help the user by searching specific details and summarizing documents such as agreements and legal paper from the given context.
-    If the answer is not in the retrieved documents, you are also allowed to ask a follow up question or if the query doesn't make any sense then just say that "I did not find any relevant information to your query.
+    If the query doesn't make any sense then just say that "I did not find any relevant information to your query".
     Give your answer and make sure your answer follows these criteria:
-        1. Generate answer in a friendly and helpful manner. 
+        1. Generate answer in a helpfula and friendly manner. 
         2. Exclude the context or this prompt from your answer.
-        3. Format your answers as you see fit by including sections, headers, subheaders, bullet points and more if needed.
+        3. Format your answers as you see fit by including sections, headers, subheaders, bullet points.
         4. Please include the source you used in your response such as the name of the document. 
         
     
@@ -134,16 +135,23 @@ def augmentation(user_query, chunks, model, tokenizer):
     formatted_prompt = chat_prompt.format()
     #print("Formatted Prompt:\n", formatted_prompt)
 
-    hf_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=max_new_tokens)
+    hf_pipeline = pipeline("text-generation", model=model, tokenizer=tokenizer, max_new_tokens=max_new_tokens, return_full_text=False)
     llm = HuggingFacePipeline(pipeline = hf_pipeline)
 
-    response = llm(formatted_prompt)
 
-    print(response)
-
+    response = llm.invoke(formatted_prompt)
 
 
-    #eturn response
+    # Store the LLM’s response in `AIMessage`
+    assistant_message = AIMessage(content=response)
+
+    # Append assistant's response to conversation history
+    messages.append(assistant_message)
+
+    # Print the assistant's response
+    print("Assistant Response:", assistant_message.content)
+
+    return assistant_message.content
 
 if __name__ == '__main__':
     RAGmain()

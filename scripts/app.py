@@ -23,6 +23,10 @@ async def process_query(user_query: str):
 
     #run inference on the query
     response = RAGmain(user_query)
+
+    #print the response 
+    print(response)
+
     #return the response to the client side
 
     return{"message": "Hello World"}
