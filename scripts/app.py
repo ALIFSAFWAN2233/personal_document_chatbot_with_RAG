@@ -1,15 +1,34 @@
 from fastapi import FastAPI
 from RAG_Implementation import RAGmain
 from LLM_loader import LLM_loader
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 #initialize the server
 app = FastAPI()
 
-# load the model on the server
-#model_loader = LLM_loader()
-#model,tokenizer = model_loader.get_model()
+origins =[
+    "http://127.0.0.1:5500",
+]
 
-#get the user_query from the frontEnd
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Allows specific origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
+# load the model on the server
+model_loader = LLM_loader()
+model,tokenizer = model_loader.get_model()
+
+
+#Define the request 'model'
+class QueryRequest(BaseModel):
+    user_query: str
+
 
 #FastAPI uses type hints to define the parameters of an endpoint function
 
@@ -18,18 +37,21 @@ app = FastAPI()
     endpoint for receiving user's questions and returns answers
 """
 
-@app.get("/query/")
-async def process_query(user_query: str): 
+@app.post("/query/")
+async def process_query(request: QueryRequest):
+
+    #get the user query sent by the client-side
+    user_query = request.user_query  
 
     #run inference on the query
     response = RAGmain(user_query)
 
     #print the response 
-    print(response)
+    print("RESPONSE GENERATED: \n\n", response)
 
     #return the response to the client side
 
-    return{"message": "Hello World"}
+    return{"response": response}
 
 
 

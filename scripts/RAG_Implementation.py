@@ -30,9 +30,9 @@ Step 3: Generation
 model_loader = LLM_loader()
 model,tokenizer = model_loader.get_model()
 
-def RAGmain():
+def RAGmain(user_query):
 
-    user_query = "What is the requirements to apply for CIMB Islamic Credit Card? "
+
     #encode the query
     query_embedding = encode_query(user_query)
 
@@ -41,7 +41,6 @@ def RAGmain():
 
     #include the chunks and the user's query (Augmentation) and generate response (Generation)
     response = augmentation(user_query,chunks,model,tokenizer)
-
 
     return response
 
@@ -79,27 +78,28 @@ def retrieve_documents(query_embedding):
     
     return retrieved_chunks
 
-
+'''
+    Will do further experimentation and POCs on the best prompt for this project use case
+'''
 
 def augmentation(user_query, chunks, model, tokenizer):
     
     base_prompt = """
     
     You are a helpful AI assistant of a personal document chatbot application. Your task is to help the user by searching specific details and summarizing documents such as agreements and legal paper from the given context.
-    If the query doesn't make any sense then just say that "I did not find any relevant information to your query".
-    Give your answer and make sure your answer follows these criteria:
-        1. Generate answer in a helpfula and friendly manner. 
+  
+    Give your answer in your response and make sure it follows these criteria:
+        1. Generate answer in a helpful and friendly manner. 
         2. Exclude the context or this prompt from your answer.
         3. Format your answers as you see fit by including sections, headers, subheaders, bullet points.
         4. Please include the source you used in your response such as the name of the document. 
         
-    
     """
 
-    max_new_tokens = 500
+    max_new_tokens = 256
 
-    """
     
+    """
         #define the chat template
     messages = [
         {"role": "system", "content": base_prompt},       
@@ -114,15 +114,16 @@ def augmentation(user_query, chunks, model, tokenizer):
     inputs = tokenizer(formatted_prompt,return_tensors="pt").to("cuda")
     
     # generate response
-    outputs = model.generate(**inputs, max_new_tokens=max_new_tokens)
+    outputs = model.generate(**inputs, max_new_tokens=max_new_tokens, include_prompt_in_result = False)
     print("the original output: ", outputs)
     #Decode and return only the new assistant response
 
     response = tokenizer.decode(outputs[0], skip_special_tokens = True)
 
-    messages.append({"role": "assistant", "content": response})
-    """
+    #messages.append({"role": "assistant", "content": response})
+    print("THE RESPONSE:\n\n\n",response)
 
+    """
     #Try out langchain's chat template (since it may not need to format or something)
 
     messages = [
@@ -140,18 +141,8 @@ def augmentation(user_query, chunks, model, tokenizer):
 
 
     response = llm.invoke(formatted_prompt)
+    return(response)
 
-
-    # Store the LLM’s response in `AIMessage`
-    assistant_message = AIMessage(content=response)
-
-    # Append assistant's response to conversation history
-    messages.append(assistant_message)
-
-    # Print the assistant's response
-    print("Assistant Response:", assistant_message.content)
-
-    return assistant_message.content
 
 if __name__ == '__main__':
     RAGmain()
